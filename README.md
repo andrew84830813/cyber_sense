@@ -2,7 +2,16 @@
 
 An environment-triggered autonomous cybersecurity agent. It watches a process event stream, detects attack signatures without being asked, fires a LangGraph reasoning pipeline, and produces a structured threat report — start to finish, no human in the loop.
 
-Built as the companion demo for [The Ignition Problem](./the-ignition-problem-v3.md), an article examining the difference between *execution autonomy* (the agent acts without step-by-step approval) and *initiation autonomy* (the agent starts without a human deciding to start it). This demo makes that distinction concrete in running code.
+**Two entry points, same pipeline:**
+
+| Entry point | Event source | Use for |
+|---|---|---|
+| `python run_continuous.py` | Real processes via psutil — runs indefinitely | Production / continuous autonomous operation |
+| `python demo.py` | Simulated attack sequences — runs on any machine, no elevated permissions | Exploring the architecture and verifying behavior |
+
+The agent code is identical in both modes. Only the event source differs. See [Continuous / production mode](#continuous--production-mode) below before running either.
+
+Built to accompany [The Ignition Problem](./the-ignition-problem-v3.md), an article examining the difference between *execution autonomy* (the agent acts without step-by-step approval) and *initiation autonomy* (the agent starts without a human deciding to start it). This repo makes that distinction operational, not just conceptual.
 
 ---
 
@@ -101,28 +110,9 @@ cp .env.example .env
 
 ---
 
-## Running the demo
-
-`demo.py` simulates the full autonomous pipeline using pre-built attack event sequences. It runs on any machine without elevated permissions and uses the same agent code as the continuous production mode — only the event source differs.
-
-```bash
-# All four scenarios in sequence (~45–60 seconds including LLM calls)
-python demo.py
-
-# Single scenario
-python demo.py --scenario A   # PowerShell download cradle   → expects HIGH
-python demo.py --scenario B   # Web shell activity            → expects HIGH
-python demo.py --scenario C   # Ransomware staging            → expects CRITICAL
-python demo.py --scenario N   # Normal user activity          → expects BENIGN
-```
-
-Reports are saved to `output/reports/` after each run.
-
----
-
 ## Continuous / production mode
 
-`run_continuous.py` wires the full stack against real processes via psutil. The sensor runs in a `while True` loop, the same trigger logic fires, the same triage LLM gate runs, and the same LangGraph pipeline executes on confirmation. This is the production architecture — `demo.py` simulates it.
+`run_continuous.py` is the primary entry point. It wires the full sensing → triage → pipeline stack against real processes via psutil. The sensor runs in a `while True` loop — the same trigger signatures fire, the same Haiku triage gate runs, and the same LangGraph pipeline executes on confirmation. Reports are written to `output/reports/` and detections are persisted to the vector store for future similarity search.
 
 ```bash
 # Full autonomous pipeline against real processes
@@ -136,6 +126,25 @@ python sensor/monitor.py --watch
 ```
 
 > **Cost warning.** Each confirmed trigger in continuous mode makes two LLM calls: a Haiku triage pass (~$0.0002) and a Sonnet analysis (~$0.01–0.03). On a busy system, trigger signatures can match frequently. **Run `--dry-run` first** to see what would fire before committing to full analysis. Review and tighten `TRIGGER_SIGNATURES` in `sensor/monitor.py` for your environment before running continuously in production.
+
+---
+
+## Demo mode
+
+`demo.py` runs the same pipeline against simulated attack event sequences. Use it to explore the architecture, step through scenarios, and verify behavior without needing elevated permissions or a live threat environment. The agent code is identical — only the event source is synthetic.
+
+```bash
+# All four scenarios in sequence (~45–60 seconds including LLM calls)
+python demo.py
+
+# Single scenario
+python demo.py --scenario A   # PowerShell download cradle   → expects HIGH
+python demo.py --scenario B   # Web shell activity            → expects HIGH
+python demo.py --scenario C   # Ransomware staging            → expects CRITICAL
+python demo.py --scenario N   # Normal user activity          → expects BENIGN
+```
+
+Reports are saved to `output/reports/` after each run.
 
 ---
 
