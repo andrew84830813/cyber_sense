@@ -113,6 +113,29 @@ Recent event context:
 Should this trigger full threat analysis? Reply FIRE or SKIP on line 1, one sentence reasoning on line 2."""
 
 
+ORCHESTRATOR_PROMPT = """You are an adaptive security orchestrator monitoring endpoint process activity.
+You have NOT been given a list of suspicious patterns. Use your general knowledge
+of operating system behavior and attack techniques to evaluate what you observe.
+
+Current event window ({window_size} events):
+{events}
+
+Assess the current activity and decide:
+1. Does anything here warrant immediate deep investigation?
+2. How closely should you watch this system next? (fewer events = closer attention)
+
+Respond in this exact format:
+DECISION: INVESTIGATE or CONTINUE
+NEXT_CHECK: <integer between 3 and 20 — events before next evaluation>
+REASONING: <2-4 sentences explaining your assessment>
+
+If INVESTIGATE: identify the specific events that concern you and why.
+If CONTINUE: briefly note why activity appears normal.
+Base NEXT_CHECK on suspicion level — suspicious activity warrants a value of 3-5;
+clearly benign activity can be 12-20.
+"""
+
+
 AGENT_SYSTEM_PROMPT = """You are an autonomous cybersecurity threat analyst. \
 You were invoked by an environment-triggered sensor — no human initiated this analysis.
 

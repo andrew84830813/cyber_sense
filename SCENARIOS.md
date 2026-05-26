@@ -8,17 +8,30 @@ For setup and running instructions, see [README.md](./README.md).
 
 ## How a scenario moves through the pipeline
 
-Every scenario follows the same path:
+Two sensing paths lead to the same pipeline. The default is Category 4.
 
 ```
 Simulated event stream
         │
+        ├─── Category 3 (--mode rules) ──────────────────────────────────────┐
+        │    sensor/monitor.py                                                │
+        │    Each event checked against TRIGGER_SIGNATURES (human-authored). │
+        │    On match: triage_with_llm() (Haiku) confirms.                   │
+        │    On confirmation: on_trigger(snapshot, all_events) fires.         │
+        │    Report footer: "Initiated by: environment signal"               │
+        │                                                                     │
+        └─── Category 4 (--mode orchestrator, default) ──────────────────────┤
+             sensor/orchestrator.py                                           │
+             OrchestratorSession evaluates event window with Haiku.           │
+             No pre-specified rules — reasons from general security knowledge. │
+             Decides INVESTIGATE or CONTINUE.                                 │
+             Sets its own next-check interval based on suspicion level.       │
+             Report includes: ORCHESTRATOR DECISION block + reasoning trail.  │
+                                                                              │
+        ◀────────────────────────────────────────────────────────────────────┘
+        │
         ▼
-sensor/monitor.py         Each event is evaluated against TRIGGER_SIGNATURES.
-        │                 On a match: triage_with_llm() confirms (Haiku call).
-        │                 On confirmation: on_trigger(snapshot, all_events) fires.
-        ▼
-agent/graph.py            Five-node LangGraph pipeline:
+agent/graph.py            Five-node LangGraph pipeline (identical in both modes):
         │
         ├─ trigger_received    Logs the triggering process snapshot.
         ├─ monitor_activity    Formats raw event list into a readable process tree.
@@ -33,7 +46,7 @@ output/reports/           Report written to disk.
 output/threat_history.json  Detection logged for future similarity search.
 ```
 
-The normal scenario (N) has no trigger — the sensor stays silent and the pipeline is run directly by `demo.py` to demonstrate the BENIGN classification path.
+The normal scenario (N) has no trigger in either mode. Category 3: sensor stays silent. Category 4: orchestrator concludes CONTINUE (you can see its reasoning in the console output). In both cases `demo.py` runs the pipeline directly to demonstrate the BENIGN classification path.
 
 ---
 

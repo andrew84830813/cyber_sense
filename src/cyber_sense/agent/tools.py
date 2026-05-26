@@ -9,7 +9,7 @@ from typing import List
 
 from langchain_core.tools import tool
 
-from memory.store import search_similar_threats
+from ..memory.store import search_similar_threats
 
 
 @tool

@@ -17,15 +17,16 @@ from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import SystemMessage
 from langchain_core.callbacks import BaseCallbackHandler
 
-from agent.tools import (
+from .tools import (
     format_process_tree,
     identify_attack_patterns,
     lookup_mitre_technique,
     get_similar_threats,
 )
-from agent.prompts import AGENT_SYSTEM_PROMPT
+from .prompts import AGENT_SYSTEM_PROMPT
 
 _tools = [format_process_tree, identify_attack_patterns, lookup_mitre_technique, get_similar_threats]
+AGENT_TOOLS = _tools  # public alias for notebook inspection
 _agent = None
 
 
